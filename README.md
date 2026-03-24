@@ -182,3 +182,4 @@ PROXY_SELLER_API_KEY=your_key PYTHONPATH=. pytest -q tests/test_proxy_seller_liv
 - [Архитектура](docs/ARCHITECTURE.md)
 - [Используемые API-эндпоинты](docs/API_ENDPOINTS.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)
+- [Инструкция для заказчика (Windows)](docs/INSTRUCTION_RU.md)
