@@ -1,5 +1,8 @@
 name: Build Windows App
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 on:
   workflow_dispatch:
   push:
@@ -36,6 +39,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          python --version
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller pytest
