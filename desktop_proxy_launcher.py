@@ -53,7 +53,7 @@ class PurchasedProxy:
 class ProxyDesktopApp:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        self.root.title("Proxy Seller Launcher")
+        self.root.title("Лаунчер прокси")
         self.root.geometry("860x560")
         self.root.minsize(760, 520)
 
@@ -65,8 +65,8 @@ class ProxyDesktopApp:
         self.quantity_var = tk.IntVar(value=1)
         self.country_var = tk.StringVar()
         self.period_var = tk.StringVar()
-        self.status_var = tk.StringVar(value="Ready")
-        self.active_proxy_var = tk.StringVar(value="Active proxy: not connected")
+        self.status_var = tk.StringVar(value="Готово")
+        self.active_proxy_var = tk.StringVar(value="Активный прокси: не подключен")
 
         self.countries_by_label: Dict[str, Dict[str, Any]] = {}
         self.periods_by_label: Dict[str, Dict[str, Any]] = {}
@@ -85,11 +85,11 @@ class ProxyDesktopApp:
         root_frame.columnconfigure(0, weight=1)
         root_frame.rowconfigure(4, weight=1)
 
-        credentials = ttk.LabelFrame(root_frame, text="Credentials", padding=12)
+        credentials = ttk.LabelFrame(root_frame, text="Данные API", padding=12)
         credentials.grid(row=0, column=0, sticky="ew")
         credentials.columnconfigure(1, weight=1)
 
-        ttk.Label(credentials, text="Proxy-Seller API key").grid(
+        ttk.Label(credentials, text="API ключ Proxy-Seller").grid(
             row=0, column=0, padx=(0, 10), sticky="w"
         )
         self.api_key_entry = ttk.Entry(
@@ -101,17 +101,17 @@ class ProxyDesktopApp:
 
         self.save_button = ttk.Button(
             credentials,
-            text="Save settings",
+            text="Сохранить",
             command=self._on_save_settings,
         )
         self.save_button.grid(row=0, column=2, padx=(10, 0))
 
-        settings = ttk.LabelFrame(root_frame, text="Proxy Order", padding=12)
+        settings = ttk.LabelFrame(root_frame, text="Параметры прокси", padding=12)
         settings.grid(row=1, column=0, sticky="ew", pady=(10, 0))
         settings.columnconfigure(1, weight=1)
         settings.columnconfigure(3, weight=1)
 
-        ttk.Label(settings, text="Proxy type").grid(row=0, column=0, sticky="w")
+        ttk.Label(settings, text="Тип прокси").grid(row=0, column=0, sticky="w")
         self.proxy_type_combo = ttk.Combobox(
             settings,
             textvariable=self.proxy_type_var,
@@ -120,7 +120,7 @@ class ProxyDesktopApp:
         )
         self.proxy_type_combo.grid(row=0, column=1, sticky="ew", padx=(8, 14))
 
-        ttk.Label(settings, text="Protocol").grid(row=0, column=2, sticky="w")
+        ttk.Label(settings, text="Протокол").grid(row=0, column=2, sticky="w")
         self.protocol_combo = ttk.Combobox(
             settings,
             textvariable=self.protocol_var,
@@ -129,7 +129,7 @@ class ProxyDesktopApp:
         )
         self.protocol_combo.grid(row=0, column=3, sticky="ew", padx=(8, 0))
 
-        ttk.Label(settings, text="Country").grid(row=1, column=0, sticky="w", pady=(12, 0))
+        ttk.Label(settings, text="Страна").grid(row=1, column=0, sticky="w", pady=(12, 0))
         self.country_combo = ttk.Combobox(
             settings,
             textvariable=self.country_var,
@@ -138,7 +138,7 @@ class ProxyDesktopApp:
         )
         self.country_combo.grid(row=1, column=1, sticky="ew", padx=(8, 14), pady=(12, 0))
 
-        ttk.Label(settings, text="Period").grid(row=1, column=2, sticky="w", pady=(12, 0))
+        ttk.Label(settings, text="Период").grid(row=1, column=2, sticky="w", pady=(12, 0))
         self.period_combo = ttk.Combobox(
             settings,
             textvariable=self.period_var,
@@ -147,7 +147,7 @@ class ProxyDesktopApp:
         )
         self.period_combo.grid(row=1, column=3, sticky="ew", padx=(8, 0), pady=(12, 0))
 
-        ttk.Label(settings, text="Quantity").grid(row=2, column=0, sticky="w", pady=(12, 0))
+        ttk.Label(settings, text="Количество").grid(row=2, column=0, sticky="w", pady=(12, 0))
         self.quantity_spin = ttk.Spinbox(
             settings,
             from_=1,
@@ -162,42 +162,42 @@ class ProxyDesktopApp:
 
         self.load_button = ttk.Button(
             actions,
-            text="Load countries",
+            text="Загрузить страны",
             command=self.load_reference_data,
         )
         self.load_button.grid(row=0, column=0, padx=(0, 8))
 
         self.connect_button = ttk.Button(
             actions,
-            text="Create + connect",
+            text="Создать и подключить",
             command=self.connect_proxy,
         )
         self.connect_button.grid(row=0, column=1, padx=(0, 8))
 
         self.connect_existing_button = ttk.Button(
             actions,
-            text="Connect active",
+            text="Подключить активный",
             command=self.connect_active_proxy,
         )
         self.connect_existing_button.grid(row=0, column=2, padx=(0, 8))
 
         self.disconnect_button = ttk.Button(
             actions,
-            text="Disconnect proxy",
+            text="Отключить прокси",
             command=self.disconnect_proxy,
         )
         self.disconnect_button.grid(row=0, column=3)
 
         self.reconnect_last_button = ttk.Button(
             actions,
-            text="Reconnect last",
+            text="Повторно подключить последний",
             command=self.reconnect_last_proxy,
         )
         self.reconnect_last_button.grid(row=1, column=0, pady=(8, 0), padx=(0, 8), sticky="w")
 
         self.open_configs_button = ttk.Button(
             actions,
-            text="Open configs folder",
+            text="Открыть папку конфигов",
             command=self.open_configs_folder,
         )
         self.open_configs_button.grid(row=1, column=1, pady=(8, 0), sticky="w")
@@ -205,13 +205,13 @@ class ProxyDesktopApp:
         status_bar = ttk.Frame(root_frame, padding=(0, 4, 0, 0))
         status_bar.grid(row=3, column=0, sticky="ew")
         status_bar.columnconfigure(1, weight=1)
-        ttk.Label(status_bar, text="Status:").grid(row=0, column=0, sticky="w")
+        ttk.Label(status_bar, text="Статус:").grid(row=0, column=0, sticky="w")
         self.status_label = ttk.Label(status_bar, textvariable=self.status_var)
         self.status_label.grid(row=0, column=1, sticky="w")
         self.active_proxy_label = ttk.Label(status_bar, textvariable=self.active_proxy_var)
         self.active_proxy_label.grid(row=1, column=0, columnspan=2, sticky="w", pady=(2, 0))
 
-        logs_frame = ttk.LabelFrame(root_frame, text="Logs", padding=10)
+        logs_frame = ttk.LabelFrame(root_frame, text="Логи", padding=10)
         logs_frame.grid(row=4, column=0, sticky="nsew", pady=(8, 0))
         logs_frame.columnconfigure(0, weight=1)
         logs_frame.rowconfigure(0, weight=1)
@@ -228,11 +228,14 @@ class ProxyDesktopApp:
         scroll.grid(row=0, column=1, sticky="ns")
         self.log_text.configure(yscrollcommand=scroll.set)
 
-        self._append_log("Enter API key, load countries, then connect.")
+        self._append_log("Введите API ключ, загрузите страны и подключитесь.")
         self._append_log(
-            "Use 'Create + connect' for a new paid proxy, or 'Connect active' to reuse existing."
+            "Кнопка 'Создать и подключить' создает новый платный заказ,"
+            " 'Подключить активный' использует уже купленный прокси."
         )
-        self._append_log("Reconnect last applies the latest saved proxy without API calls.")
+        self._append_log(
+            "'Повторно подключить последний' применяет последний сохраненный прокси без API."
+        )
 
     def _on_save_settings(self) -> None:
         self._save_settings(silent=False)
@@ -258,13 +261,16 @@ class ProxyDesktopApp:
         try:
             SETTINGS_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         except OSError as exc:
-            self._append_log(f"Could not save settings: {exc}")
+            self._append_log(f"Не удалось сохранить настройки: {exc}")
             if not silent:
-                messagebox.showerror("Save settings", f"Could not write settings file: {exc}")
+                messagebox.showerror(
+                    "Сохранение настроек",
+                    f"Не удалось записать файл настроек: {exc}",
+                )
             return
 
         if not silent:
-            self._append_log(f"Settings saved to: {SETTINGS_FILE}")
+            self._append_log(f"Настройки сохранены в: {SETTINGS_FILE}")
 
     def _load_settings(self) -> None:
         if not SETTINGS_FILE.exists():
@@ -274,7 +280,7 @@ class ProxyDesktopApp:
         try:
             payload = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
         except (OSError, ValueError) as exc:
-            self._append_log(f"Could not read settings file: {exc}")
+            self._append_log(f"Не удалось прочитать файл настроек: {exc}")
             return
 
         self.api_key_var.set(str(payload.get("api_key", self.api_key_var.get())))
@@ -289,7 +295,7 @@ class ProxyDesktopApp:
 
         self.saved_country_id = payload.get("country_id")
         self.saved_period_id = payload.get("period_id")
-        self._append_log(f"Settings loaded from: {SETTINGS_FILE}")
+        self._append_log(f"Настройки загружены из: {SETTINGS_FILE}")
         self._load_last_proxy_state()
 
     def _load_last_proxy_state(self) -> None:
@@ -332,7 +338,7 @@ class ProxyDesktopApp:
     def load_reference_data(self) -> None:
         api_key = self.api_key_var.get().strip()
         if not api_key:
-            messagebox.showerror("API key", "Please enter your Proxy-Seller API key.")
+            messagebox.showerror("API ключ", "Введите API ключ Proxy-Seller.")
             return
 
         proxy_type = self.proxy_type_var.get().strip() or "ipv4"
@@ -341,9 +347,9 @@ class ProxyDesktopApp:
             client = ProxySellerClient(api_key=api_key)
             countries, periods = client.get_reference_options(proxy_type)
             if not countries:
-                raise ProxySellerAPIError("No countries returned by API.")
+                raise ProxySellerAPIError("API не вернул список стран.")
             if not periods:
-                raise ProxySellerAPIError("No period options returned by API.")
+                raise ProxySellerAPIError("API не вернул варианты периода.")
             return countries, periods
 
         def on_success(result: Tuple[list[dict[str, Any]], list[dict[str, Any]]]) -> None:
@@ -377,12 +383,12 @@ class ProxyDesktopApp:
                 self.period_var.set(period_labels[0])
 
             self._append_log(
-                f"Loaded {len(country_labels)} countries and {len(period_labels)} period options."
+                f"Загружено стран: {len(country_labels)}, периодов: {len(period_labels)}."
             )
             self._save_settings(silent=True)
 
         self._run_async(
-            "Loading countries and periods from Proxy-Seller API...",
+            "Загрузка стран и периодов из Proxy-Seller API...",
             worker,
             on_success,
         )
@@ -390,15 +396,15 @@ class ProxyDesktopApp:
     def connect_proxy(self) -> None:
         api_key = self.api_key_var.get().strip()
         if not api_key:
-            messagebox.showerror("API key", "Please enter your Proxy-Seller API key.")
+            messagebox.showerror("API ключ", "Введите API ключ Proxy-Seller.")
             return
 
         country_item = self.countries_by_label.get(self.country_var.get())
         period_item = self.periods_by_label.get(self.period_var.get())
         if not country_item or not period_item:
             messagebox.showerror(
-                "Missing selection",
-                "Load countries first and choose country/period.",
+                "Нет выбора",
+                "Сначала загрузите страны и выберите страну/период.",
             )
             return
 
@@ -409,27 +415,27 @@ class ProxyDesktopApp:
         try:
             quantity = int(self.quantity_var.get())
         except Exception:
-            messagebox.showerror("Quantity", "Quantity must be a number.")
+            messagebox.showerror("Количество", "Количество должно быть числом.")
             return
 
         if quantity <= 0:
-            messagebox.showerror("Quantity", "Quantity must be greater than zero.")
+            messagebox.showerror("Количество", "Количество должно быть больше нуля.")
             return
 
-        country_name = str(country_item.get("name", "unknown"))
-        period_name = str(period_item.get("name", period_item.get("id", "unknown")))
+        country_name = str(country_item.get("name", "неизвестно"))
+        period_name = str(period_item.get("name", period_item.get("id", "неизвестно")))
         confirm = messagebox.askyesno(
-            "Confirm paid order",
-            "This action creates a paid Proxy-Seller order.\n\n"
-            f"Type: {proxy_type}\n"
-            f"Protocol: {protocol_payload}\n"
-            f"Country: {country_name}\n"
-            f"Period: {period_name}\n"
-            f"Quantity: {quantity}\n\n"
-            "Continue?",
+            "Подтверждение платного заказа",
+            "Это действие создаст платный заказ в Proxy-Seller.\n\n"
+            f"Тип: {proxy_type}\n"
+            f"Протокол: {protocol_payload}\n"
+            f"Страна: {country_name}\n"
+            f"Период: {period_name}\n"
+            f"Количество: {quantity}\n\n"
+            "Продолжить?",
         )
         if not confirm:
-            self._append_log("Order creation canceled by user.")
+            self._append_log("Создание заказа отменено пользователем.")
             return
 
         def worker() -> Dict[str, Any]:
@@ -448,7 +454,7 @@ class ProxyDesktopApp:
             order_id = self._extract_order_id(order_result)
             if not order_id:
                 raise ProxySellerAPIError(
-                    "Order created, but order id was not found in API response."
+                    "Заказ создан, но идентификатор заказа не найден в ответе API."
                 )
 
             proxy_item = client.wait_for_order_proxy(
@@ -503,19 +509,19 @@ class ProxyDesktopApp:
             currency = result.get("order_currency")
             total_info = ""
             if total is not None and currency:
-                total_info = f" Estimated order total: {total} {currency}."
+                total_info = f" Предварительная стоимость: {total} {currency}."
 
             self._append_log(
-                "Connected. "
-                f"Proxy: {result['proxy_url']}."
+                "Подключено. "
+                f"Прокси: {result['proxy_url']}."
                 f"{total_info}"
             )
-            self._append_log(f"Saved config: {result['config_path']}")
+            self._append_log(f"Конфиг сохранен: {result['config_path']}")
             self._append_log(result["system_result"])
             self._save_settings(silent=True)
 
         self._run_async(
-            "Creating order, waiting for proxy activation, and applying system proxy...",
+            "Создание заказа, ожидание активации и применение системного прокси...",
             worker,
             on_success,
         )
@@ -523,7 +529,7 @@ class ProxyDesktopApp:
     def connect_active_proxy(self) -> None:
         api_key = self.api_key_var.get().strip()
         if not api_key:
-            messagebox.showerror("API key", "Please enter your Proxy-Seller API key.")
+            messagebox.showerror("API ключ", "Введите API ключ Proxy-Seller.")
             return
 
         proxy_type = self.proxy_type_var.get().strip() or "ipv4"
@@ -537,7 +543,7 @@ class ProxyDesktopApp:
             client = ProxySellerClient(api_key=api_key)
             items = client.get_active_proxies(proxy_type=proxy_type)
             if not items:
-                raise ProxySellerAPIError("No active proxies found for selected proxy type.")
+                raise ProxySellerAPIError("Для выбранного типа не найдено активных прокси.")
 
             def is_country_match(item: Dict[str, Any]) -> bool:
                 if not selected_country_name and not selected_country_alpha3:
@@ -555,8 +561,8 @@ class ProxyDesktopApp:
             filtered = [item for item in items if is_country_match(item)]
             if not filtered:
                 raise ProxySellerAPIError(
-                    "No active proxies for selected country. "
-                    "Try 'Create + connect' or choose another country."
+                    "Для выбранной страны нет активных прокси. "
+                    "Попробуйте 'Создать и подключить' или выберите другую страну."
                 )
 
             proxy_item = filtered[0]
@@ -608,15 +614,15 @@ class ProxyDesktopApp:
                 config_path=result["config_path"],
             )
             self._append_log(
-                f"Connected active proxy: {result['proxy_url']}. "
-                f"Matches found: {result['available_count']}."
+                f"Подключен активный прокси: {result['proxy_url']}. "
+                f"Найдено совпадений: {result['available_count']}."
             )
-            self._append_log(f"Saved config: {result['config_path']}")
+            self._append_log(f"Конфиг сохранен: {result['config_path']}")
             self._append_log(result["system_result"])
             self._save_settings(silent=True)
 
         self._run_async(
-            "Finding active proxy and applying system proxy...",
+            "Поиск активного прокси и применение системного прокси...",
             worker,
             on_success,
         )
@@ -624,8 +630,8 @@ class ProxyDesktopApp:
     def reconnect_last_proxy(self) -> None:
         if not LAST_PROXY_FILE.exists():
             messagebox.showinfo(
-                "Reconnect last",
-                "No saved proxy found yet. Connect once with API first.",
+                "Повторное подключение",
+                "Сохраненный прокси еще не найден. Сначала подключитесь через API.",
             )
             return
 
@@ -634,9 +640,9 @@ class ProxyDesktopApp:
                 payload = json.loads(LAST_PROXY_FILE.read_text(encoding="utf-8"))
                 proxy_data = payload.get("proxy", {})
                 if not isinstance(proxy_data, dict):
-                    raise ValueError("Invalid saved proxy format.")
+                    raise ValueError("Некорректный формат сохраненного прокси.")
             except Exception as exc:
-                raise ProxySellerAPIError(f"Could not read saved proxy file: {exc}") from exc
+                raise ProxySellerAPIError(f"Не удалось прочитать файл сохраненного прокси: {exc}") from exc
 
             host = str(proxy_data.get("host") or "").strip()
             raw_port = proxy_data.get("port")
@@ -648,11 +654,11 @@ class ProxyDesktopApp:
             order_id = str(proxy_data.get("order_id") or "saved")
 
             if not host:
-                raise ProxySellerAPIError("Saved proxy does not contain host.")
+                raise ProxySellerAPIError("В сохраненном прокси отсутствует хост.")
             try:
                 port = int(raw_port)
             except (TypeError, ValueError) as exc:
-                raise ProxySellerAPIError("Saved proxy does not contain valid port.") from exc
+                raise ProxySellerAPIError("В сохраненном прокси отсутствует корректный порт.") from exc
 
             purchased_proxy = PurchasedProxy(
                 host=host,
@@ -686,12 +692,12 @@ class ProxyDesktopApp:
             self.active_proxy = result["proxy"]
             self.active_proxy_url = result["proxy_url"]
             self._set_active_proxy_label()
-            self._append_log(f"Reconnected saved proxy: {result['proxy_url']}")
+            self._append_log(f"Повторно подключен сохраненный прокси: {result['proxy_url']}")
             self._append_log(result["system_result"])
-            self._append_log(f"Source config: {result['config_path']}")
+            self._append_log(f"Источник конфига: {result['config_path']}")
 
         self._run_async(
-            "Applying last saved proxy to system settings...",
+            "Применение последнего сохраненного прокси в системных настройках...",
             worker,
             on_success,
         )
@@ -705,9 +711,9 @@ class ProxyDesktopApp:
             self.active_proxy_url = ""
             self._set_active_proxy_label()
             self._append_log(message)
-            self._append_log("Disconnected.")
+            self._append_log("Прокси отключен.")
 
-        self._run_async("Disabling system proxy...", worker, on_success)
+        self._run_async("Отключение системного прокси...", worker, on_success)
 
     def open_configs_folder(self) -> None:
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -720,12 +726,12 @@ class ProxyDesktopApp:
             elif system_name == "windows":
                 subprocess.run(["explorer", path], check=False)
             else:
-                raise SystemProxyError("This action is supported on macOS and Windows only.")
+                raise SystemProxyError("Действие поддерживается только на macOS и Windows.")
         except Exception as exc:
-            messagebox.showerror("Open folder", f"Could not open folder: {exc}")
+            messagebox.showerror("Открытие папки", f"Не удалось открыть папку: {exc}")
             return
 
-        self._append_log(f"Opened configs folder: {path}")
+        self._append_log(f"Открыта папка конфигов: {path}")
 
     def _run_async(
         self,
@@ -734,7 +740,7 @@ class ProxyDesktopApp:
         on_success: Callable[[Any], None],
     ) -> None:
         if self.busy:
-            self._append_log("Another operation is in progress. Please wait.")
+            self._append_log("Другая операция уже выполняется. Подождите.")
             return
 
         self._set_busy(True)
@@ -759,19 +765,19 @@ class ProxyDesktopApp:
         on_success: Callable[[Any], None],
     ) -> None:
         self._set_busy(False)
-        self.status_var.set("Ready")
+        self.status_var.set("Готово")
         on_success(result)
 
     def _on_async_error(self, error: Exception) -> None:
         self._set_busy(False)
-        self.status_var.set("Error")
-        self._append_log(f"Error: {error}")
+        self.status_var.set("Ошибка")
+        self._append_log(f"Ошибка: {error}")
 
         if isinstance(error, (ProxySellerAPIError, SystemProxyError)):
             message = str(error)
         else:
-            message = f"Unexpected error: {error}"
-        messagebox.showerror("Operation failed", message)
+            message = f"Неожиданная ошибка: {error}"
+        messagebox.showerror("Операция не выполнена", message)
 
     def _set_busy(self, busy: bool) -> None:
         self.busy = busy
@@ -799,14 +805,14 @@ class ProxyDesktopApp:
 
     def _set_active_proxy_label(self) -> None:
         if not self.active_proxy:
-            self.active_proxy_var.set("Active proxy: not connected")
+            self.active_proxy_var.set("Активный прокси: не подключен")
             return
 
         proxy = self.active_proxy
-        auth_tag = "auth" if proxy.username else "no-auth"
-        country_tag = proxy.country_alpha3 or proxy.country or "unknown country"
+        auth_tag = "с авторизацией" if proxy.username else "без авторизации"
+        country_tag = proxy.country_alpha3 or proxy.country or "страна неизвестна"
         self.active_proxy_var.set(
-            f"Active proxy: {proxy.protocol.upper()} {proxy.host}:{proxy.port} "
+            f"Активный прокси: {proxy.protocol.upper()} {proxy.host}:{proxy.port} "
             f"({country_tag}, {auth_tag})"
         )
 
@@ -825,11 +831,11 @@ class ProxyDesktopApp:
         try:
             LAST_PROXY_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         except OSError as exc:
-            self._append_log(f"Warning: could not write last proxy state: {exc}")
+            self._append_log(f"Предупреждение: не удалось записать состояние последнего прокси: {exc}")
 
     @staticmethod
     def _country_label(country: Dict[str, Any]) -> str:
-        name = str(country.get("name", "Unknown"))
+        name = str(country.get("name", "Неизвестно"))
         alpha3 = str(country.get("alpha3", "")).strip()
         country_id = country.get("id")
         alpha3_suffix = f" ({alpha3})" if alpha3 else ""
@@ -837,7 +843,7 @@ class ProxyDesktopApp:
 
     @staticmethod
     def _period_label(period: Dict[str, Any]) -> str:
-        name = str(period.get("name", "Period"))
+        name = str(period.get("name", "Период"))
         period_id = period.get("id")
         return f"{name} [id={period_id}]"
 
@@ -857,14 +863,14 @@ class ProxyDesktopApp:
             raw_port = proxy_item.get("port")
 
         if not host:
-            raise ProxySellerAPIError("Proxy API response does not include host IP.")
+            raise ProxySellerAPIError("В ответе API отсутствует IP хоста прокси.")
         if raw_port is None:
-            raise ProxySellerAPIError("Proxy API response does not include a port.")
+            raise ProxySellerAPIError("В ответе API отсутствует порт прокси.")
 
         try:
             port = int(raw_port)
         except (TypeError, ValueError) as exc:
-            raise ProxySellerAPIError("Proxy API returned non-numeric port.") from exc
+            raise ProxySellerAPIError("API вернул некорректный порт прокси.") from exc
 
         username = str(proxy_item.get("login") or "").strip()
         password = str(proxy_item.get("password") or "").strip()
