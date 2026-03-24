@@ -1,106 +1,169 @@
 # Proxy Seller Desktop Launcher
 
-Simple desktop GUI for purchasing and enabling a proxy through Proxy-Seller API.
+Десктоп-приложение (GUI) для macOS и Windows, которое автоматизирует работу с Proxy-Seller:
 
-## Features
+- выбор типа/страны/периода или тарифа;
+- расчет и оформление заказа через API;
+- ожидание активации прокси;
+- автоматическое применение прокси в системе;
+- повторное подключение ранее купленного прокси.
 
-- Enter Proxy-Seller API key in the app.
-- Load available countries and periods dynamically from API.
-- Load resident/scraper tariffs dynamically from API.
-- Configure extra order params directly in UI:
-  - `paymentId` (`1` balance, `43` linked card).
-  - `authorization` (optional real IP for IP-auth).
-  - `generateAuth` (`Y/N`).
-  - `customTargetName` (purpose / site).
-  - Mobile: `mobileServiceType`, `operatorId`, `rotationId`.
-- Create an order directly from GUI.
-- Reuse existing active proxies without creating a new order.
-- Filter active proxies by `orderId` or `baseOrderNumber`.
-- Check current account balance from UI.
-- Reconnect the last saved proxy without API calls (`Reconnect last`).
-- Wait for proxy activation automatically.
-- Save generated proxy config to JSON in `~/.proxy-desktop-launcher/generated_proxy_configs/`.
-- Keep latest successful proxy in `~/.proxy-desktop-launcher/last_proxy.json`.
-- Save and restore API key, selected type/protocol/country/period/tariff, and quantity.
-- Show confirmation dialog before creating a paid order.
-- Show current active proxy in the status area.
-- Validate type-specific rules before paid order:
-  - IPv6 minimum quantity.
-  - MIX / MIX_ISP allowed quantity set by selected country/package.
-  - Mobile required fields (service/operator/rotation).
-- Apply system proxy automatically:
-  - macOS: HTTP/HTTPS and SOCKS5 via `networksetup`.
-  - Windows: proxy values in user Internet Settings registry.
+Цель проекта: чтобы пользователь работал только через интерфейс, без ручной генерации и копирования прокси-конфигов в консоли.
 
-## Requirements
+## Что реализовано
 
-- Python 3.9+
-- `pip install -r requirements.txt`
+- Полный GUI-флоу под `ipv4`, `ipv6`, `mobile`, `isp`, `mix`, `mix_isp`, `resident`, `scraper`.
+- Загрузка справочников из API (`страны`, `периоды`, `tariffs`).
+- Проверка ограничений перед платным заказом:
+  - `ipv6`: минимальное количество;
+  - `mix`/`mix_isp`: разрешенные количества;
+  - `mobile`: обязательные `service/operator/rotation`.
+- Поддержка дополнительных параметров заказа:
+  - `paymentId` (`1` баланс, `43` карта),
+  - `authorization` (IP-авторизация),
+  - `generateAuth` (`Y/N`),
+  - `customTargetName`.
+- Поддержка фильтрации активных прокси по `orderId` или `baseOrderNumber`.
+- Действия в UI:
+  - `Купить и подключить`,
+  - `Подключить купленный`,
+  - `Подключить последний`,
+  - `Отключить прокси`,
+  - `Проверить баланс`,
+  - `Показать активные`,
+  - `Открыть папку конфигов`.
+- Асинхронные API-операции без блокировки GUI + журнал событий с пагинацией.
+- Вставка API-ключа из буфера и удаление ключа из настроек.
+- Сохранение состояния (ключ, выбранные параметры, последний прокси) локально.
 
-## Setup macOS Environment
+## Поддерживаемые платформы
 
-One command to install dependencies and verify environment:
+- macOS
+- Windows
+
+Linux в этой сборке не поддерживается.
+
+## Быстрый старт (разработка)
+
+### 1) Установить зависимости
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2) Запуск из исходников
+
+```bash
+python app.py
+```
+
+## macOS: подготовка окружения и сборка `.app`
+
+Автоматическая настройка окружения:
 
 ```bash
 ./setup_macos_env.sh
 ```
 
-## Run (No Console)
-
-After build, open this file with double click in Finder:
-
-`dist/Proxy Seller Launcher.app`
-
-No terminal interaction is required.
-
-## Build macOS App
+Сборка приложения:
 
 ```bash
 ./build_macos_app.sh
 ```
 
-This creates:
+Результат:
 
-- `dist/Proxy Seller Launcher.app` (desktop app, windowed, no console)
+- `dist/Proxy Seller Launcher.app`
 
-For reliable Tk GUI build on macOS:
+## Windows: сборка `.exe`
 
-```bash
-brew install python@3.12 python-tk@3.12
+Перед сборкой на Windows установите зависимости:
+
+```powershell
+pip install -r requirements.txt
+pip install pyinstaller
 ```
 
-`build_macos_app.sh` uses `python3.12` from Homebrew and auto-creates `.venv-macos`.
-
-## Build Windows App
-
-Run one of these on Windows:
+Затем запустите:
 
 ```powershell
 .\build_windows_app.ps1
 ```
 
+или:
+
 ```bat
 build_windows_app.bat
 ```
 
-This creates:
+Результат:
 
-- `dist\Proxy Seller Launcher\Proxy Seller Launcher.exe` (windowed, no console)
+- `dist\Proxy Seller Launcher\Proxy Seller Launcher.exe`
 
-## Usage
+## Как пользоваться приложением
 
-1. Paste your Proxy-Seller API key.
-2. Choose proxy type and protocol.
-3. Click `Обновить список стран` (or tariffs for resident/scraper).
-4. Select country+period for standard types, or tariff for resident/scraper. Then set quantity.
-5. For `mobile`, also choose service type, operator, and rotation.
-6. If needed, click `Показать расширенные параметры` to set `paymentId`, `authorization`, `generateAuth`, `customTargetName` and `orderId/baseOrderNumber` filter.
-7. Click `Купить и подключить` (new paid order) or `Подключить купленный` (reuse active).
-8. To disable system proxy, click `Отключить прокси`.
-9. Open `Ещё` menu for secondary actions: reconnect last proxy, active list, balance, configs folder.
+1. Вставьте API-ключ Proxy-Seller.
+2. Выберите тип прокси и протокол.
+3. Нажмите `Обновить данные`.
+4. Выберите:
+   - страна + период (для обычных типов),
+   - или тариф (для `resident` / `scraper`).
+5. Укажите количество.
+6. Для `mobile` выберите сервис, оператора и ротацию.
+7. При необходимости откройте расширенные параметры и задайте:
+   - способ оплаты,
+   - IP авторизации,
+   - generateAuth,
+   - customTargetName,
+   - фильтр orderId/baseOrderNumber.
+8. Нажмите:
+   - `Купить и подключить` (создаст платный заказ), или
+   - `Подключить купленный` (без создания нового заказа).
+9. Для отключения системного прокси используйте `Отключить прокси`.
 
-## Notes
+## Где хранятся данные
 
-- API key is stored locally in `~/.proxy-desktop-launcher/settings.json` to speed up repeated use.
-- For Windows, username/password are returned and saved in JSON config, but many apps handle proxy auth separately.
-- This project targets macOS and Windows only.
+Все локальные файлы хранятся в:
+
+- `~/.proxy-desktop-launcher/`
+
+Ключевые файлы:
+
+- `settings.json` - настройки UI и API-ключ;
+- `last_proxy.json` - последний успешно подключенный прокси;
+- `generated_proxy_configs/` - сохраненные конфиги заказов;
+- `app_debug.log` - debug-лог приложения.
+
+## Тесты
+
+Установить dev-зависимости:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+Запустить unit-тесты:
+
+```bash
+PYTHONPATH=. pytest -q
+```
+
+Live smoke-тесты API (по желанию):
+
+```bash
+PROXY_SELLER_API_KEY=your_key PYTHONPATH=. pytest -q tests/test_proxy_seller_live.py
+```
+
+Важно: live-тесты проверяют справочники/баланс/calc и не должны оформлять покупку.
+
+## Ограничения и важные моменты
+
+- `Купить и подключить` создает платный заказ в Proxy-Seller (есть диалог подтверждения).
+- На Windows системные настройки прокси не сохраняют логин/пароль глобально: отдельные приложения могут запрашивать авторизацию самостоятельно.
+- API-ключ хранится локально в открытом виде в `settings.json` (это сделано для удобства автозаполнения).
+
+## Документация
+
+- [Архитектура](docs/ARCHITECTURE.md)
+- [Используемые API-эндпоинты](docs/API_ENDPOINTS.md)
+- [Troubleshooting](docs/TROUBLESHOOTING.md)
