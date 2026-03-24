@@ -100,6 +100,21 @@ build_windows_app.bat
 
 - `dist\Proxy Seller Launcher\Proxy Seller Launcher.exe`
 
+## Автосборка Windows в GitHub Actions
+
+В репозиторий добавлен workflow:
+
+- `.github/workflows/windows-build.yml`
+
+Как использовать:
+
+1. Откройте вкладку `Actions` в GitHub.
+2. Выберите workflow `Build Windows App`.
+3. Нажмите `Run workflow` (или просто пушьте изменения в `main`, если затронуты файлы приложения/сборки).
+4. После завершения откройте run и скачайте artifact `proxy-seller-launcher-windows`.
+
+В artifact лежит собранный `.exe` и содержимое папки `dist/Proxy Seller Launcher`.
+
 ## Как пользоваться приложением
 
 1. Вставьте API-ключ Proxy-Seller.
