@@ -21,6 +21,14 @@ Simple desktop GUI for purchasing and enabling a proxy through Proxy-Seller API.
 - Python 3.9+
 - `pip install -r requirements.txt`
 
+## Setup macOS Environment
+
+One command to install dependencies and verify environment:
+
+```bash
+./setup_macos_env.sh
+```
+
 ## Run (No Console)
 
 After build, open this file with double click in Finder:
@@ -38,6 +46,14 @@ No terminal interaction is required.
 This creates:
 
 - `dist/Proxy Seller Launcher.app` (desktop app, windowed, no console)
+
+For reliable Tk GUI build on macOS:
+
+```bash
+brew install python@3.12 python-tk@3.12
+```
+
+`build_macos_app.sh` uses `python3.12` from Homebrew and auto-creates `.venv-macos`.
 
 ## Build Windows App
 
