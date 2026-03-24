@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import platform
+import subprocess
 import threading
 import tkinter as tk
 from dataclasses import asdict, dataclass
@@ -23,6 +25,7 @@ from system_proxy import (
 APP_DATA_DIR = Path.home() / ".proxy-desktop-launcher"
 SETTINGS_FILE = APP_DATA_DIR / "settings.json"
 OUTPUT_DIR = APP_DATA_DIR / "generated_proxy_configs"
+LAST_PROXY_FILE = APP_DATA_DIR / "last_proxy.json"
 PROXY_TYPES = ("ipv4", "ipv6", "mobile", "isp", "mix", "mix_isp")
 PROTOCOL_OPTIONS = ("HTTP", "SOCKS5")
 ORDER_ID_KEYS = (
@@ -63,10 +66,12 @@ class ProxyDesktopApp:
         self.country_var = tk.StringVar()
         self.period_var = tk.StringVar()
         self.status_var = tk.StringVar(value="Ready")
+        self.active_proxy_var = tk.StringVar(value="Active proxy: not connected")
 
         self.countries_by_label: Dict[str, Dict[str, Any]] = {}
         self.periods_by_label: Dict[str, Dict[str, Any]] = {}
         self.active_proxy: Optional[PurchasedProxy] = None
+        self.active_proxy_url = ""
         self.saved_country_id: Optional[Any] = None
         self.saved_period_id: Optional[Any] = None
         self.busy = False
@@ -183,12 +188,28 @@ class ProxyDesktopApp:
         )
         self.disconnect_button.grid(row=0, column=3)
 
+        self.reconnect_last_button = ttk.Button(
+            actions,
+            text="Reconnect last",
+            command=self.reconnect_last_proxy,
+        )
+        self.reconnect_last_button.grid(row=1, column=0, pady=(8, 0), padx=(0, 8), sticky="w")
+
+        self.open_configs_button = ttk.Button(
+            actions,
+            text="Open configs folder",
+            command=self.open_configs_folder,
+        )
+        self.open_configs_button.grid(row=1, column=1, pady=(8, 0), sticky="w")
+
         status_bar = ttk.Frame(root_frame, padding=(0, 4, 0, 0))
         status_bar.grid(row=3, column=0, sticky="ew")
         status_bar.columnconfigure(1, weight=1)
         ttk.Label(status_bar, text="Status:").grid(row=0, column=0, sticky="w")
         self.status_label = ttk.Label(status_bar, textvariable=self.status_var)
         self.status_label.grid(row=0, column=1, sticky="w")
+        self.active_proxy_label = ttk.Label(status_bar, textvariable=self.active_proxy_var)
+        self.active_proxy_label.grid(row=1, column=0, columnspan=2, sticky="w", pady=(2, 0))
 
         logs_frame = ttk.LabelFrame(root_frame, text="Logs", padding=10)
         logs_frame.grid(row=4, column=0, sticky="nsew", pady=(8, 0))
@@ -211,6 +232,7 @@ class ProxyDesktopApp:
         self._append_log(
             "Use 'Create + connect' for a new paid proxy, or 'Connect active' to reuse existing."
         )
+        self._append_log("Reconnect last applies the latest saved proxy without API calls.")
 
     def _on_save_settings(self) -> None:
         self._save_settings(silent=False)
@@ -246,6 +268,7 @@ class ProxyDesktopApp:
 
     def _load_settings(self) -> None:
         if not SETTINGS_FILE.exists():
+            self._load_last_proxy_state()
             return
 
         try:
@@ -267,6 +290,44 @@ class ProxyDesktopApp:
         self.saved_country_id = payload.get("country_id")
         self.saved_period_id = payload.get("period_id")
         self._append_log(f"Settings loaded from: {SETTINGS_FILE}")
+        self._load_last_proxy_state()
+
+    def _load_last_proxy_state(self) -> None:
+        if not LAST_PROXY_FILE.exists():
+            return
+
+        try:
+            payload = json.loads(LAST_PROXY_FILE.read_text(encoding="utf-8"))
+            proxy_data = payload.get("proxy", {})
+            if not isinstance(proxy_data, dict):
+                return
+
+            host = str(proxy_data.get("host") or "").strip()
+            port = int(proxy_data.get("port"))
+            protocol = str(proxy_data.get("protocol") or "http").strip()
+            username = str(proxy_data.get("username") or "").strip()
+            password = str(proxy_data.get("password") or "").strip()
+            country = str(proxy_data.get("country") or "").strip()
+            country_alpha3 = str(proxy_data.get("country_alpha3") or "").strip()
+            order_id = str(proxy_data.get("order_id") or "saved")
+        except Exception:
+            return
+
+        if not host or port <= 0:
+            return
+
+        self.active_proxy = PurchasedProxy(
+            host=host,
+            port=port,
+            protocol=protocol,
+            username=username,
+            password=password,
+            country=country,
+            country_alpha3=country_alpha3,
+            order_id=order_id,
+        )
+        self.active_proxy_url = str(payload.get("proxy_url") or self._build_proxy_url(self.active_proxy))
+        self._set_active_proxy_label()
 
     def load_reference_data(self) -> None:
         api_key = self.api_key_var.get().strip()
@@ -430,6 +491,13 @@ class ProxyDesktopApp:
         def on_success(result: Dict[str, Any]) -> None:
             purchased_proxy = result["proxy"]
             self.active_proxy = purchased_proxy
+            self.active_proxy_url = result["proxy_url"]
+            self._set_active_proxy_label()
+            self._store_last_proxy_state(
+                purchased_proxy=purchased_proxy,
+                proxy_url=result["proxy_url"],
+                config_path=result["config_path"],
+            )
 
             total = result.get("order_total")
             currency = result.get("order_currency")
@@ -532,6 +600,13 @@ class ProxyDesktopApp:
         def on_success(result: Dict[str, Any]) -> None:
             purchased_proxy = result["proxy"]
             self.active_proxy = purchased_proxy
+            self.active_proxy_url = result["proxy_url"]
+            self._set_active_proxy_label()
+            self._store_last_proxy_state(
+                purchased_proxy=purchased_proxy,
+                proxy_url=result["proxy_url"],
+                config_path=result["config_path"],
+            )
             self._append_log(
                 f"Connected active proxy: {result['proxy_url']}. "
                 f"Matches found: {result['available_count']}."
@@ -546,16 +621,111 @@ class ProxyDesktopApp:
             on_success,
         )
 
+    def reconnect_last_proxy(self) -> None:
+        if not LAST_PROXY_FILE.exists():
+            messagebox.showinfo(
+                "Reconnect last",
+                "No saved proxy found yet. Connect once with API first.",
+            )
+            return
+
+        def worker() -> Dict[str, Any]:
+            try:
+                payload = json.loads(LAST_PROXY_FILE.read_text(encoding="utf-8"))
+                proxy_data = payload.get("proxy", {})
+                if not isinstance(proxy_data, dict):
+                    raise ValueError("Invalid saved proxy format.")
+            except Exception as exc:
+                raise ProxySellerAPIError(f"Could not read saved proxy file: {exc}") from exc
+
+            host = str(proxy_data.get("host") or "").strip()
+            raw_port = proxy_data.get("port")
+            protocol = str(proxy_data.get("protocol") or "http").strip().lower()
+            username = str(proxy_data.get("username") or "").strip()
+            password = str(proxy_data.get("password") or "").strip()
+            country = str(proxy_data.get("country") or "").strip()
+            country_alpha3 = str(proxy_data.get("country_alpha3") or "").strip()
+            order_id = str(proxy_data.get("order_id") or "saved")
+
+            if not host:
+                raise ProxySellerAPIError("Saved proxy does not contain host.")
+            try:
+                port = int(raw_port)
+            except (TypeError, ValueError) as exc:
+                raise ProxySellerAPIError("Saved proxy does not contain valid port.") from exc
+
+            purchased_proxy = PurchasedProxy(
+                host=host,
+                port=port,
+                protocol=protocol,
+                username=username,
+                password=password,
+                country=country,
+                country_alpha3=country_alpha3,
+                order_id=order_id,
+            )
+            proxy_url = str(payload.get("proxy_url") or self._build_proxy_url(purchased_proxy))
+            result = apply_system_proxy(
+                SystemProxyConfig(
+                    host=purchased_proxy.host,
+                    port=purchased_proxy.port,
+                    protocol=purchased_proxy.protocol,
+                    username=purchased_proxy.username,
+                    password=purchased_proxy.password,
+                )
+            )
+            config_path = str(payload.get("config_path") or LAST_PROXY_FILE)
+            return {
+                "proxy": purchased_proxy,
+                "proxy_url": proxy_url,
+                "config_path": config_path,
+                "system_result": result,
+            }
+
+        def on_success(result: Dict[str, Any]) -> None:
+            self.active_proxy = result["proxy"]
+            self.active_proxy_url = result["proxy_url"]
+            self._set_active_proxy_label()
+            self._append_log(f"Reconnected saved proxy: {result['proxy_url']}")
+            self._append_log(result["system_result"])
+            self._append_log(f"Source config: {result['config_path']}")
+
+        self._run_async(
+            "Applying last saved proxy to system settings...",
+            worker,
+            on_success,
+        )
+
     def disconnect_proxy(self) -> None:
         def worker() -> str:
             return disable_system_proxy()
 
         def on_success(message: str) -> None:
             self.active_proxy = None
+            self.active_proxy_url = ""
+            self._set_active_proxy_label()
             self._append_log(message)
             self._append_log("Disconnected.")
 
         self._run_async("Disabling system proxy...", worker, on_success)
+
+    def open_configs_folder(self) -> None:
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        path = str(OUTPUT_DIR)
+
+        system_name = platform.system().lower()
+        try:
+            if system_name == "darwin":
+                subprocess.run(["open", path], check=False)
+            elif system_name == "windows":
+                subprocess.run(["explorer", path], check=False)
+            else:
+                raise SystemProxyError("This action is supported on macOS and Windows only.")
+        except Exception as exc:
+            messagebox.showerror("Open folder", f"Could not open folder: {exc}")
+            return
+
+        self._append_log(f"Opened configs folder: {path}")
 
     def _run_async(
         self,
@@ -610,6 +780,8 @@ class ProxyDesktopApp:
         self.connect_button.configure(state=state)
         self.connect_existing_button.configure(state=state)
         self.disconnect_button.configure(state=state)
+        self.reconnect_last_button.configure(state=state)
+        self.open_configs_button.configure(state=state)
         self.proxy_type_combo.configure(state="disabled" if busy else "readonly")
         self.protocol_combo.configure(state="disabled" if busy else "readonly")
         self.country_combo.configure(state="disabled" if busy else "readonly")
@@ -624,6 +796,36 @@ class ProxyDesktopApp:
         self.log_text.insert("end", f"[{timestamp}] {line}\n")
         self.log_text.see("end")
         self.log_text.configure(state="disabled")
+
+    def _set_active_proxy_label(self) -> None:
+        if not self.active_proxy:
+            self.active_proxy_var.set("Active proxy: not connected")
+            return
+
+        proxy = self.active_proxy
+        auth_tag = "auth" if proxy.username else "no-auth"
+        country_tag = proxy.country_alpha3 or proxy.country or "unknown country"
+        self.active_proxy_var.set(
+            f"Active proxy: {proxy.protocol.upper()} {proxy.host}:{proxy.port} "
+            f"({country_tag}, {auth_tag})"
+        )
+
+    def _store_last_proxy_state(
+        self,
+        purchased_proxy: PurchasedProxy,
+        proxy_url: str,
+        config_path: str,
+    ) -> None:
+        payload = {
+            "saved_at_utc": datetime.now(timezone.utc).isoformat(),
+            "proxy": asdict(purchased_proxy),
+            "proxy_url": proxy_url,
+            "config_path": config_path,
+        }
+        try:
+            LAST_PROXY_FILE.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        except OSError as exc:
+            self._append_log(f"Warning: could not write last proxy state: {exc}")
 
     @staticmethod
     def _country_label(country: Dict[str, Any]) -> str:

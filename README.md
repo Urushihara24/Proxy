@@ -8,10 +8,13 @@ Simple desktop GUI for purchasing and enabling a proxy through Proxy-Seller API.
 - Load available countries and periods dynamically from API.
 - Create an order directly from GUI.
 - Reuse existing active proxies without creating a new order.
+- Reconnect the last saved proxy without API calls (`Reconnect last`).
 - Wait for proxy activation automatically.
 - Save generated proxy config to JSON in `~/.proxy-desktop-launcher/generated_proxy_configs/`.
+- Keep latest successful proxy in `~/.proxy-desktop-launcher/last_proxy.json`.
 - Save and restore API key, selected type/protocol/country/period, and quantity.
 - Show confirmation dialog before creating a paid order.
+- Show current active proxy in the status area.
 - Apply system proxy automatically:
   - macOS: HTTP/HTTPS and SOCKS5 via `networksetup`.
   - Windows: proxy values in user Internet Settings registry.
@@ -79,6 +82,8 @@ This creates:
 4. Select country and period.
 5. Click `Create + connect` (new paid order) or `Connect active` (reuse active).
 6. To disable system proxy, click `Disconnect proxy`.
+7. To quickly restore previous proxy, click `Reconnect last`.
+8. To inspect generated JSON files, click `Open configs folder`.
 
 ## Notes
 
