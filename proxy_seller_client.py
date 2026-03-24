@@ -49,12 +49,17 @@ class ProxySellerClient:
         json_body: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         url = self._build_url(endpoint)
+        request_headers = {
+            "Accept": "application/json",
+            "Accept-Encoding": "identity",
+        }
         try:
             response = requests.request(
                 method=method,
                 url=url,
                 params=params,
                 json=json_body,
+                headers=request_headers,
                 timeout=self.timeout,
             )
         except requests.RequestException as exc:
@@ -62,9 +67,14 @@ class ProxySellerClient:
 
         try:
             payload = response.json()
-        except ValueError as exc:
+        except Exception as exc:
+            if isinstance(exc, ValueError):
+                raise ProxySellerAPIError(
+                    f"Proxy-Seller returned non-JSON response (HTTP {response.status_code})"
+                ) from exc
             raise ProxySellerAPIError(
-                f"Proxy-Seller returned non-JSON response (HTTP {response.status_code})"
+                "Proxy-Seller returned unreadable response "
+                f"(HTTP {response.status_code}): {exc}"
             ) from exc
 
         if response.status_code >= 400:
@@ -86,9 +96,11 @@ class ProxySellerClient:
     def get_reference(self, proxy_type: str) -> List[Dict[str, Any]]:
         data = self._request("GET", f"/reference/list/{proxy_type}")
         items = data.get("items")
-        if not isinstance(items, list):
-            return []
-        return items
+        if isinstance(items, dict):
+            return [items]
+        if isinstance(items, list):
+            return [item for item in items if isinstance(item, dict)]
+        return []
 
     def get_reference_options(
         self, proxy_type: str
@@ -140,6 +152,9 @@ class ProxySellerClient:
         quantity: int,
         payment_id: int = 1,
         protocol: str = "http",
+        custom_target_name: str = "",
+        authorization: str = "",
+        generate_auth: str = "N",
     ) -> Dict[str, Any]:
         payload: Dict[str, Any] = {
             "countryId": int(country_id),
@@ -151,6 +166,17 @@ class ProxySellerClient:
         if proxy_type == "ipv6":
             payload["protocol"] = "SOCKS5" if protocol.lower() == "socks5" else "HTTPS"
 
+        target_name = str(custom_target_name or "").strip()
+        if target_name:
+            payload["customTargetName"] = target_name
+
+        auth_method = str(authorization or "").strip()
+        if auth_method:
+            payload["authorization"] = auth_method
+
+        generate_auth_value = str(generate_auth or "N").strip().upper()
+        payload["generateAuth"] = "Y" if generate_auth_value == "Y" else "N"
+
         return payload
 
     def calculate_order(self, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -158,6 +184,36 @@ class ProxySellerClient:
 
     def place_order(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         return self._request("POST", "/order/make", json_body=payload)
+
+    def get_balance(self) -> Dict[str, Any]:
+        return self._request("GET", "/balance/get")
+
+    def build_tariff_order_payload(
+        self,
+        tarif_id: int,
+        quantity: int,
+        payment_id: int = 1,
+        custom_target_name: str = "",
+        authorization: str = "",
+        generate_auth: str = "N",
+    ) -> Dict[str, Any]:
+        payload: Dict[str, Any] = {
+            "tarifId": int(tarif_id),
+            "quantity": int(quantity),
+            "paymentId": int(payment_id),
+        }
+
+        target_name = str(custom_target_name or "").strip()
+        if target_name:
+            payload["customTargetName"] = target_name
+
+        auth_method = str(authorization or "").strip()
+        if auth_method:
+            payload["authorization"] = auth_method
+
+        generate_auth_value = str(generate_auth or "N").strip().upper()
+        payload["generateAuth"] = "Y" if generate_auth_value == "Y" else "N"
+        return payload
 
     def get_active_proxies(
         self,
