@@ -32,13 +32,14 @@ def _patch_request(
     captured: Dict[str, Any] = {}
 
     def fake_request(
-        *,
+        _session: Any,
         method: str,
         url: str,
         params: Optional[Dict[str, Any]] = None,
         json: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
-        timeout: int,
+        timeout: int = 30,
+        **_kwargs: Any,
     ) -> FakeResponse:
         captured["method"] = method
         captured["url"] = url
@@ -48,8 +49,12 @@ def _patch_request(
         captured["timeout"] = timeout
         return response
 
-    monkeypatch.setattr(psc.requests, "request", fake_request)
+    monkeypatch.setattr(psc.requests.sessions.Session, "request", fake_request)
     return captured
+
+
+def test_client_disables_environment_proxy_usage(client: ProxySellerClient) -> None:
+    assert client._session.trust_env is False
 
 
 def test_build_url_normalizes_slashes(client: ProxySellerClient) -> None:
@@ -457,3 +462,5 @@ def test_wait_for_order_proxy_times_out(
 
     with pytest.raises(ProxySellerAPIError, match="Timed out waiting for proxy activation"):
         client.wait_for_order_proxy("ipv4", order_id="123", timeout_sec=1, poll_interval_sec=0)
+
+

@@ -22,6 +22,10 @@ class ProxySellerClient:
         self.api_key = api_key.strip()
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        # Do not inherit system proxy settings for API calls.
+        # This avoids proxy loops/407 when app already enabled a system proxy.
+        self._session = requests.Session()
+        self._session.trust_env = False
 
     def _build_url(self, endpoint: str) -> str:
         endpoint = endpoint.strip()
@@ -54,7 +58,7 @@ class ProxySellerClient:
             "Accept-Encoding": "identity",
         }
         try:
-            response = requests.request(
+            response = self._session.request(
                 method=method,
                 url=url,
                 params=params,
