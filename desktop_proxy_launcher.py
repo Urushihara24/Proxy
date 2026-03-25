@@ -71,6 +71,8 @@ ORDER_ID_KEYS = (
     "base_order_number",
     "listBaseOrderNumbers",
 )
+RESIDENT_PROXY_DEFAULT_HOST = "res.proxy-seller.com"
+RESIDENT_PROXY_DEFAULT_PORT = 10000
 
 SYSTEM_NAME = platform.system().lower()
 if SYSTEM_NAME == "darwin":
@@ -873,6 +875,7 @@ class ProxyDesktopApp:
             borderwidth=0,
         )
         self.more_menu.add_command(label="Подключить последний", command=self.reconnect_last_proxy)
+        self.more_menu.add_command(label="Выпустить resident конфиг", command=self.issue_resident_config)
         self.more_menu.add_command(label="Показать активные", command=self.show_active_proxies)
         self.more_menu.add_command(label="Проверить баланс", command=self.show_balance)
         self.more_menu.add_separator()
@@ -1003,6 +1006,9 @@ class ProxyDesktopApp:
         )
         self._append_log(
             "Вторичные функции (баланс, активные, последний, конфиги) доступны в меню 'Ещё'."
+        )
+        self._append_log(
+            "Для резидентских прокси без покупки используйте: Ещё → Выпустить resident конфиг."
         )
         self._append_log(f"Debug-лог: {APP_LOG_FILE}")
 
@@ -2135,6 +2141,185 @@ class ProxyDesktopApp:
             return
 
         self._append_log(f"Открыта папка конфигов: {path}")
+
+    def issue_resident_config(self) -> None:
+        api_key = self.api_key_var.get().strip()
+        if not api_key:
+            messagebox.showerror("API ключ", "Введите API ключ Proxy-Seller.")
+            return
+
+        protocol = self.protocol_var.get().strip().upper()
+        protocol_payload = "socks5" if protocol == "SOCKS5" else "http"
+
+        def _to_int(value: Any) -> int:
+            try:
+                return int(str(value).strip())
+            except Exception:
+                return -1
+
+        def _is_active_package(item: Dict[str, Any]) -> bool:
+            raw = item.get("is_active")
+            if isinstance(raw, bool):
+                return raw
+            return str(raw).strip().lower() in {"1", "true", "y", "yes"}
+
+        def _pick_subuser_package(items: list[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+            if not items:
+                return None
+            ranked = sorted(
+                items,
+                key=lambda item: (
+                    0 if _is_active_package(item) else 1,
+                    -max(
+                        _to_int(item.get("traffic_left_sub")),
+                        _to_int(item.get("traffic_left")),
+                        0,
+                    ),
+                ),
+            )
+            for item in ranked:
+                package_key = str(item.get("package_key") or "").strip()
+                if package_key:
+                    return item
+            return None
+
+        def worker() -> Dict[str, Any]:
+            client = ProxySellerClient(api_key=api_key)
+            package_mode = "main"
+            package_info: Dict[str, Any] = {}
+            package_key = ""
+            traffic_left_value: Any = None
+
+            try:
+                package_info = client.get_resident_package()
+                package_key = str(package_info.get("package_key") or "").strip()
+                traffic_left_value = package_info.get("traffic_left")
+            except ProxySellerAPIError as exc:
+                self._debug_log(f"Resident package info skipped: {exc}")
+
+            try:
+                credentials = client.create_resident_tool_list()
+            except ProxySellerAPIError as main_exc:
+                self._debug_log(f"Resident main tools list error: {main_exc}")
+                try:
+                    subuser_packages = client.get_resident_subuser_packages()
+                except ProxySellerAPIError as sub_exc:
+                    raise ProxySellerAPIError(
+                        "Не удалось выпустить resident конфиг: "
+                        f"main package: {main_exc}; subuser packages: {sub_exc}"
+                    ) from sub_exc
+
+                selected_package = _pick_subuser_package(subuser_packages)
+                if not selected_package:
+                    raise ProxySellerAPIError(
+                        "Не найдено активного resident package/subuser package с traffic."
+                    ) from main_exc
+
+                package_mode = "subuser"
+                package_info = selected_package
+                package_key = str(selected_package.get("package_key") or "").strip()
+                traffic_left_value = (
+                    selected_package.get("traffic_left_sub")
+                    or selected_package.get("traffic_left")
+                )
+                if not package_key:
+                    raise ProxySellerAPIError(
+                        "В subuser package отсутствует package_key."
+                    ) from main_exc
+                credentials = client.create_resident_subuser_tool_list(package_key=package_key)
+
+            username = str(credentials.get("login") or "").strip()
+            password = str(credentials.get("password") or "").strip()
+            list_id = str(credentials.get("id") or "").strip()
+            if not username or not password:
+                raise ProxySellerAPIError(
+                    "API не вернул login/password для resident конфигурации."
+                )
+
+            order_id = f"resident_{package_mode}_{list_id or 'list'}"
+            purchased_proxy = PurchasedProxy(
+                host=RESIDENT_PROXY_DEFAULT_HOST,
+                port=RESIDENT_PROXY_DEFAULT_PORT,
+                protocol=protocol_payload,
+                username=username,
+                password=password,
+                country="Residential",
+                country_alpha3="RES",
+                order_id=order_id,
+            )
+
+            config_path, proxy_url = self._save_proxy_config(
+                purchased_proxy=purchased_proxy,
+                calc_response={
+                    "mode": "resident_tools_list",
+                    "package_mode": package_mode,
+                    "traffic_left": traffic_left_value,
+                },
+                order_response={
+                    "mode": "resident_tools_list",
+                    "package_key": package_key,
+                },
+                proxy_response=credentials,
+            )
+
+            system_result = apply_system_proxy(
+                SystemProxyConfig(
+                    host=purchased_proxy.host,
+                    port=purchased_proxy.port,
+                    protocol=purchased_proxy.protocol,
+                    username=purchased_proxy.username,
+                    password=purchased_proxy.password,
+                )
+            )
+
+            traffic_left_mb = None
+            traffic_left_int = _to_int(traffic_left_value)
+            if traffic_left_int >= 0:
+                traffic_left_mb = round(traffic_left_int / 1024 / 1024, 2)
+
+            return {
+                "proxy": purchased_proxy,
+                "proxy_url": proxy_url,
+                "config_path": str(config_path),
+                "system_result": system_result,
+                "package_mode": package_mode,
+                "traffic_left_mb": traffic_left_mb,
+                "package_key": package_key,
+                "list_id": list_id,
+                "package_info": package_info,
+            }
+
+        def on_success(result: Dict[str, Any]) -> None:
+            purchased_proxy = result["proxy"]
+            self.active_proxy = purchased_proxy
+            self.active_proxy_url = result["proxy_url"]
+            self._set_active_proxy_label()
+            self._store_last_proxy_state(
+                purchased_proxy=purchased_proxy,
+                proxy_url=result["proxy_url"],
+                config_path=result["config_path"],
+            )
+
+            traffic_info = ""
+            traffic_left_mb = result.get("traffic_left_mb")
+            if isinstance(traffic_left_mb, (int, float)):
+                traffic_info = f" Остаток трафика: {traffic_left_mb} MB."
+
+            self._append_log(
+                "Resident конфиг выпущен и подключен. "
+                f"Режим: {result.get('package_mode', 'main')}."
+                f"{traffic_info}"
+            )
+            self._append_log(f"Прокси: {result['proxy_url']}")
+            self._append_log(f"Конфиг сохранен: {result['config_path']}")
+            self._append_log(result["system_result"])
+            self._save_settings(silent=True)
+
+        self._run_async(
+            "Выпуск resident-конфига и применение системного прокси...",
+            worker,
+            on_success,
+        )
 
     def show_balance(self) -> None:
         api_key = self.api_key_var.get().strip()

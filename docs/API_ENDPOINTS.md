@@ -34,6 +34,18 @@
 5. `GET /balance/get`
 - Назначение: проверка текущего баланса.
 
+6. `GET /resident/package`
+- Назначение: получить данные активного резидентского пакета (остаток трафика, package_key).
+
+7. `PUT /resident/list/tools`
+- Назначение: выпустить `login/password` для API TOOL из основного resident package (без покупки нового тарифа).
+
+8. `GET /residentsubuser/packages`
+- Назначение: получить subuser-пакеты резидентских прокси.
+
+9. `PUT /residentsubuser/list/tools`
+- Назначение: выпустить `login/password` для API TOOL по `package_key` subuser package.
+
 ## Формирование payload
 
 ### Обычные типы (`ipv4`, `ipv6`, `mobile`, `isp`, `mix`, `mix_isp`)

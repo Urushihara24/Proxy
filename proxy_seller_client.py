@@ -188,6 +188,31 @@ class ProxySellerClient:
     def get_balance(self) -> Dict[str, Any]:
         return self._request("GET", "/balance/get")
 
+    def get_resident_package(self) -> Dict[str, Any]:
+        return self._request("GET", "/resident/package")
+
+    def create_resident_tool_list(self) -> Dict[str, Any]:
+        return self._request("PUT", "/resident/list/tools")
+
+    def get_resident_subuser_packages(self) -> List[Dict[str, Any]]:
+        data = self._request("GET", "/residentsubuser/packages")
+        if isinstance(data, list):
+            return [item for item in data if isinstance(item, dict)]
+        items = data.get("items")
+        if isinstance(items, list):
+            return [item for item in items if isinstance(item, dict)]
+        return []
+
+    def create_resident_subuser_tool_list(self, package_key: str) -> Dict[str, Any]:
+        normalized_key = str(package_key or "").strip()
+        if not normalized_key:
+            raise ProxySellerAPIError("package_key is required for resident subuser list")
+        return self._request(
+            "PUT",
+            "/residentsubuser/list/tools",
+            json_body={"package_key": normalized_key},
+        )
+
     def build_tariff_order_payload(
         self,
         tarif_id: int,

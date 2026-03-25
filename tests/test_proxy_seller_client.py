@@ -222,6 +222,81 @@ def test_get_balance_calls_balance_endpoint(
     assert captured["params"] is None
 
 
+def test_get_resident_package_calls_expected_endpoint(
+    client: ProxySellerClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = _patch_request(
+        monkeypatch,
+        FakeResponse(200, {"status": "success", "data": {"package_key": "abc123"}}),
+    )
+    data = client.get_resident_package()
+    assert data == {"package_key": "abc123"}
+    assert captured["method"] == "GET"
+    assert captured["url"] == "https://example.com/api/v1/test_key/resident/package"
+
+
+def test_create_resident_tool_list_calls_expected_endpoint(
+    client: ProxySellerClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = _patch_request(
+        monkeypatch,
+        FakeResponse(200, {"status": "success", "data": {"id": 1, "login": "u", "password": "p"}}),
+    )
+    data = client.create_resident_tool_list()
+    assert data == {"id": 1, "login": "u", "password": "p"}
+    assert captured["method"] == "PUT"
+    assert captured["url"] == "https://example.com/api/v1/test_key/resident/list/tools"
+    assert captured["json"] is None
+
+
+def test_get_resident_subuser_packages_handles_data_list(
+    client: ProxySellerClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_request(
+        monkeypatch,
+        FakeResponse(200, {"status": "success", "data": [{"package_key": "k1"}, "bad"]}),
+    )
+    data = client.get_resident_subuser_packages()
+    assert data == [{"package_key": "k1"}]
+
+
+def test_get_resident_subuser_packages_handles_items_list(
+    client: ProxySellerClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_request(
+        monkeypatch,
+        FakeResponse(200, {"status": "success", "data": {"items": [{"package_key": "k2"}, 123]}}),
+    )
+    data = client.get_resident_subuser_packages()
+    assert data == [{"package_key": "k2"}]
+
+
+def test_create_resident_subuser_tool_list_requires_package_key(
+    client: ProxySellerClient,
+) -> None:
+    with pytest.raises(ProxySellerAPIError, match="package_key is required"):
+        client.create_resident_subuser_tool_list("")
+
+
+def test_create_resident_subuser_tool_list_calls_expected_endpoint(
+    client: ProxySellerClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = _patch_request(
+        monkeypatch,
+        FakeResponse(200, {"status": "success", "data": {"id": 3, "login": "u2", "password": "p2"}}),
+    )
+    data = client.create_resident_subuser_tool_list("pkg_123")
+    assert data == {"id": 3, "login": "u2", "password": "p2"}
+    assert captured["method"] == "PUT"
+    assert captured["url"] == "https://example.com/api/v1/test_key/residentsubuser/list/tools"
+    assert captured["json"] == {"package_key": "pkg_123"}
+
+
 def test_get_active_proxies_filters_non_dict(
     client: ProxySellerClient,
     monkeypatch: pytest.MonkeyPatch,
