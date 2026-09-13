@@ -1,92 +1,92 @@
-# API эндпоинты, используемые приложением
+# API Endpoints Used by the Application
 
-Базовый URL:
+Base URL:
 
 - `https://proxy-seller.com/personal/api/v1/{API_KEY}`
 
-## Используемые запросы
+## Requests
 
 1. `GET /reference/list/{type}`
-- Назначение: загрузка справочных данных для UI.
-- Используется для получения:
-  - стран,
-  - периодов,
-  - mobile-операторов/ротаций,
-  - тарифов (`resident` / `scraper`).
+- Purpose: load reference data for the UI.
+- Used to retrieve:
+  - countries,
+  - periods,
+  - mobile operators / rotations,
+  - tariffs for `resident` / `scraper`.
 
 2. `POST /order/calc`
-- Назначение: расчет стоимости заказа до оплаты.
-- Вызывается перед `order/make` в сценарии "Купить и подключить".
+- Purpose: calculate order cost before payment.
+- Called before `order/make` in the `Купить и подключить` (Buy and connect) flow.
 
 3. `POST /order/make`
-- Назначение: создание платного заказа.
-- Вызывается только после подтверждения пользователем.
+- Purpose: create a paid order.
+- Called only after explicit user confirmation.
 
 4. `GET /proxy/list/{type}`
-- Назначение:
-  - получение списка активных прокси,
-  - ожидание активации после покупки,
-  - подключение уже купленного прокси.
-- Поддерживается фильтрация:
+- Purpose:
+  - retrieve active proxies,
+  - wait for activation after purchase,
+  - connect an already purchased proxy.
+- Supports filtering by:
   - `orderId`,
   - `baseOrderNumber`.
 
 5. `GET /balance/get`
-- Назначение: проверка текущего баланса.
+- Purpose: retrieve the current account balance.
 
 6. `GET /resident/package`
-- Назначение: получить данные активного резидентского пакета (остаток трафика, package_key).
+- Purpose: retrieve the active resident package, including remaining traffic and `package_key`.
 
 7. `PUT /resident/list/tools`
-- Назначение: выпустить `login/password` для API TOOL из основного resident package (без покупки нового тарифа).
+- Purpose: issue `login/password` credentials for API TOOL from the main resident package without buying a new tariff.
 
 8. `GET /residentsubuser/packages`
-- Назначение: получить subuser-пакеты резидентских прокси.
+- Purpose: retrieve resident proxy subuser packages.
 
 9. `PUT /residentsubuser/list/tools`
-- Назначение: выпустить `login/password` для API TOOL по `package_key` subuser package.
+- Purpose: issue `login/password` credentials for API TOOL using a subuser package `package_key`.
 
-## Формирование payload
+## Payload construction
 
-### Обычные типы (`ipv4`, `ipv6`, `mobile`, `isp`, `mix`, `mix_isp`)
+### Standard types (`ipv4`, `ipv6`, `mobile`, `isp`, `mix`, `mix_isp`)
 
-Обязательные поля:
+Required fields:
 
 - `countryId`
 - `periodId`
 - `quantity`
 - `paymentId`
 
-Опциональные:
+Optional fields:
 
 - `customTargetName`
 - `authorization`
 - `generateAuth`
 
-Дополнительно:
+Additional type-specific fields:
 
-- для `ipv6`: `protocol` (`HTTPS` или `SOCKS5`);
-- для `mobile`: `mobileServiceType`, `operatorId`, `rotationId`.
+- `ipv6`: `protocol` (`HTTPS` or `SOCKS5`);
+- `mobile`: `mobileServiceType`, `operatorId`, `rotationId`.
 
-### Тарифные типы (`resident`, `scraper`)
+### Tariff-based types (`resident`, `scraper`)
 
-Обязательные поля:
+Required fields:
 
 - `tarifId`
 - `quantity`
 - `paymentId`
 
-Опциональные:
+Optional fields:
 
 - `customTargetName`
 - `authorization`
 - `generateAuth`
 
-## Обработка ошибок
+## Error handling
 
-Клиент нормализует ошибки в исключение `ProxySellerAPIError`:
+The client normalizes failures into `ProxySellerAPIError` for:
 
-- сетевые ошибки,
-- HTTP >= 400,
+- network errors,
+- HTTP status >= 400,
 - `status != success`,
-- невалидный JSON в ответе.
+- invalid JSON responses.
