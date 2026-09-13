@@ -1,69 +1,71 @@
 # Troubleshooting
 
-## 1) Не обновляются страны / тарифы
+## 1) Countries or tariffs do not refresh
 
-Проверьте:
+Check that:
 
-- API-ключ введен корректно.
-- Есть интернет и доступ к `proxy-seller.com`.
-- В журнале приложения (`Журнал`) нет ошибки API.
+- the API key is correct;
+- internet access and `proxy-seller.com` are available;
+- the application log (`Журнал`) does not show an API error.
 
-Дополнительно:
+Also inspect the latest lines in:
 
-- откройте `~/.proxy-desktop-launcher/app_debug.log` и проверьте последние строки.
+- `~/.proxy-desktop-launcher/app_debug.log`
 
-## 2) Кнопка "Купить и подключить" не проходит дальше
+## 2) `Купить и подключить` does not continue
 
-Частые причины:
+Common causes:
 
-- не выбрана страна/период (или тариф для `resident`/`scraper`);
-- некорректное количество для выбранного типа;
-- для `mobile` не выбраны оператор/ротация;
-- не хватает средств на балансе.
+- no country/period selected, or no tariff selected for `resident`/`scraper`;
+- invalid quantity for the selected proxy type;
+- operator/rotation not selected for `mobile`;
+- insufficient account balance.
 
-## 3) Прокси купился, но не применился в системе
+## 3) The proxy was purchased but not applied to the system
 
-Проверьте:
+Check that:
 
-- хватает ли прав на изменение системных настроек;
-- есть ли активные сетевые сервисы (macOS);
-- не блокирует ли корпоративная политика изменение proxy settings.
+- the application has permission to change system settings;
+- active network services exist on macOS;
+- corporate policy is not blocking changes to proxy settings.
 
-Повторите действие:
+Retry with:
 
-- `Подключить купленный` или `Подключить последний`.
+- `Подключить купленный` or `Подключить последний`.
 
-## 4) На Windows приложения запрашивают логин/пароль
+## 4) Windows applications ask for username/password
 
-Это ожидаемое поведение для части приложений.
+This is expected for some applications.
 
-- Системный прокси на Windows не всегда хранит глобальные credentials.
-- Используйте логин/пароль из сгенерированного JSON-конфига или настройте авторизацию внутри целевого приложения.
+- Windows system proxy settings do not always store global credentials.
+- Use the username/password from the generated JSON configuration or configure authentication directly in the target application.
 
-## 5) Не работает скролл
+## 5) Scrolling does not work
 
-Приложение поддерживает:
+The application supports:
 
-- колесо мыши;
-- трекпад/mac gesture scroll;
-- полосы прокрутки справа в основном окне и в журнале.
+- mouse wheel;
+- trackpad / macOS gesture scrolling;
+- vertical scrollbars in the main window and event log.
 
-Если прокрутка все равно не реагирует:
+If scrolling still does not respond:
 
-- кликните мышью по области списка/журнала и попробуйте снова;
-- проверьте, что окно активно (в фокусе);
-- перезапустите приложение.
+- click inside the list/log area and try again;
+- verify that the application window has focus;
+- restart the application.
 
-## 6) Где смотреть логи и конфиги
+## 6) Logs and configuration files
 
-- Debug-лог: `~/.proxy-desktop-launcher/app_debug.log`
-- Последний прокси: `~/.proxy-desktop-launcher/last_proxy.json`
-- Сохраненные конфиги: `~/.proxy-desktop-launcher/generated_proxy_configs/`
+- Debug log: `~/.proxy-desktop-launcher/app_debug.log`
+- Last proxy: `~/.proxy-desktop-launcher/last_proxy.json`
+- Saved configurations: `~/.proxy-desktop-launcher/generated_proxy_configs/`
 
-## 7) Как сделать "чистый старт"
+## 7) Clean start
 
-1. Закройте приложение.
-2. Удалите (или переименуйте) папку `~/.proxy-desktop-launcher/`.
-3. Запустите приложение снова.
+1. Close the application.
+2. Delete or rename `~/.proxy-desktop-launcher/`.
+3. Start the application again.
 
-Это сбросит сохраненный API-ключ, параметры формы и состояние последнего прокси.
+This resets the saved API key, form parameters and last-proxy state.
+
+> The application UI is currently Russian, so UI labels above are kept exactly as displayed in the product.
