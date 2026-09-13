@@ -1,58 +1,58 @@
-# Архитектура
+# Architecture
 
-## Обзор
+## Overview
 
-Приложение состоит из трех основных модулей:
+The application consists of three main modules:
 
-- `desktop_proxy_launcher.py` - GUI, бизнес-логика сценариев пользователя, асинхронные задачи.
-- `proxy_seller_client.py` - HTTP-клиент Proxy-Seller API, нормализация ответов и ошибок.
-- `system_proxy.py` - применение/отключение системного прокси на macOS и Windows.
+- `desktop_proxy_launcher.py` — GUI, user-flow business logic and asynchronous tasks.
+- `proxy_seller_client.py` — Proxy-Seller API HTTP client, response normalization and error handling.
+- `system_proxy.py` — enables/disables the system proxy on macOS and Windows.
 
-Точка входа: `app.py`.
+Entry point: `app.py`.
 
-## Поток данных
+## Data flow
 
-1. Пользователь задает параметры в UI.
-2. GUI вызывает `ProxySellerClient` (в фоне через worker-поток).
-3. Для платного сценария:
+1. The user configures parameters in the UI.
+2. The GUI calls `ProxySellerClient` in a background worker thread.
+3. For a paid flow:
    - `order/calc`,
    - `order/make`,
-   - опрос `proxy/list/{type}` до появления активного прокси.
-4. Прокси-конфиг сохраняется в JSON.
-5. Прокси применяется к системе через `apply_system_proxy`.
-6. Статус/логи обновляются в UI.
+   - poll `proxy/list/{type}` until an active proxy appears.
+4. The proxy configuration is saved as JSON.
+5. The proxy is applied to the operating system through `apply_system_proxy`.
+6. Status and logs are updated in the UI.
 
-## Асинхронная модель
+## Asynchronous model
 
-- Сетевые и системные операции запускаются в фоне (`threading.Thread`).
-- Результаты возвращаются в основной поток через очередь событий.
-- Это предотвращает зависание интерфейса во время API-запросов.
+- Network and system operations run in the background with `threading.Thread`.
+- Results return to the main thread through an event queue.
+- This prevents the GUI from freezing during API requests.
 
-## Локальное хранилище
+## Local storage
 
-База данных не используется. Приложение хранит данные в `~/.proxy-desktop-launcher`:
+No database is used. Application data is stored in `~/.proxy-desktop-launcher`:
 
-- `settings.json`: API-ключ и выбранные параметры.
-- `last_proxy.json`: последний подключенный прокси.
-- `generated_proxy_configs/*.json`: история сгенерированных конфигов.
-- `app_debug.log`: технический лог.
+- `settings.json`: API key and selected parameters.
+- `last_proxy.json`: last connected proxy.
+- `generated_proxy_configs/*.json`: generated-configuration history.
+- `app_debug.log`: technical log.
 
-## Платформенная часть
+## Platform layer
 
 ### macOS
 
-- Используется `networksetup`.
-- Для HTTP включаются `webproxy` и `securewebproxy`.
-- Для SOCKS5 включается `socksfirewallproxy`.
+- Uses `networksetup`.
+- HTTP mode enables `webproxy` and `securewebproxy`.
+- SOCKS5 mode enables `socksfirewallproxy`.
 
 ### Windows
 
-- Изменяются параметры в реестре:
+- Updates registry values under:
   - `HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings`
-- Вызывается `InternetSetOptionW` для уведомления системы об обновлении прокси.
+- Calls `InternetSetOptionW` to notify the operating system that proxy settings changed.
 
-## Ограничения
+## Limitations
 
-- Поддержка только macOS и Windows.
-- Linux в этой версии не поддерживается.
-- Для Windows авторизация `user:pass` не устанавливается глобально как системный credential-cache.
+- Only macOS and Windows are supported.
+- Linux is not supported in this version.
+- On Windows, `user:pass` authentication is not stored globally as a system credential cache.
