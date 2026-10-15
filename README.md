@@ -10,6 +10,9 @@ Desktop GUI application for macOS and Windows that automates work with Proxy-Sel
 [![Windows](https://img.shields.io/badge/Windows-Supported-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 [![macOS](https://img.shields.io/badge/macOS-Supported-000000?style=for-the-badge&logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![pytest](https://img.shields.io/badge/pytest-Tested-0A9EDC?style=for-the-badge&logo=pytest&logoColor=white)](https://pytest.org/)
+[![CI](https://img.shields.io/github/actions/workflow/status/Urushihara24/Proxy/ci.yml?branch=main&style=for-the-badge&label=CI)](https://github.com/Urushihara24/Proxy/actions/workflows/ci.yml)
+[![Security](https://img.shields.io/github/actions/workflow/status/Urushihara24/Proxy/security.yml?branch=main&style=for-the-badge&label=Security)](https://github.com/Urushihara24/Proxy/actions/workflows/security.yml)
+[![Windows Build](https://img.shields.io/github/actions/workflow/status/Urushihara24/Proxy/windows-build.yml?branch=main&style=for-the-badge&label=Windows%20Build)](https://github.com/Urushihara24/Proxy/actions/workflows/windows-build.yml)
 
 </div>
 
@@ -186,6 +189,16 @@ PROXY_SELLER_API_KEY=your_key PYTHONPATH=. pytest -q tests/test_proxy_seller_liv
 ```
 
 Live tests check reference data, balance and calculation endpoints and must not create a purchase.
+
+### Automated quality gates
+
+- offline unit tests on Python 3.11 and 3.12;
+- runtime module compile verification;
+- dependency vulnerability audit;
+- guard against committed `.env` and local `settings.json` credentials;
+- separate Windows executable build workflow.
+
+Live Proxy-Seller API checks remain opt-in and are intentionally excluded from pull-request CI.
 
 ## Limitations and important behavior
 
