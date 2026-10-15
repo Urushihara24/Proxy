@@ -16,6 +16,20 @@ Desktop GUI application for macOS and Windows that automates work with Proxy-Sel
 
 </div>
 
+## Product snapshot
+
+| Area | Capability |
+|---|---|
+| **Proxy catalog** | IPv4, IPv6, mobile, ISP, mix, resident and scraper flows |
+| **API workflow** | reference data, order calculation, purchase, activation and active-proxy lookup |
+| **Desktop integration** | applies and removes the operating-system proxy from the GUI |
+| **Local state** | remembers selected parameters, API key state and the last connected proxy |
+| **Platforms** | macOS and Windows; automated Windows artifact build in GitHub Actions |
+| **Quality** | offline unit tests and compile checks on Python 3.11/3.12, dependency audit and local-secret guards |
+
+> [!CAUTION]
+> The application can create billable Proxy-Seller orders and change the operating system proxy configuration. CI does **not** perform live purchases or mutate the host proxy; those actions happen only when the application is explicitly configured with a real API key and the corresponding GUI action is used.
+
 - select proxy type, country, period or tariff;
 - calculate and create an order through the API;
 - wait for proxy activation;
