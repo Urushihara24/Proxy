@@ -16,6 +16,20 @@ Desktop GUI application for macOS and Windows that automates work with Proxy-Sel
 
 </div>
 
+## Product snapshot
+
+| Area | Capability |
+|---|---|
+| **Proxy catalog** | IPv4, IPv6, mobile, ISP, mix, resident and scraper flows |
+| **API workflow** | reference data, order calculation, purchase, activation and active-proxy lookup |
+| **Desktop integration** | applies and removes the operating-system proxy from the GUI |
+| **Local state** | remembers selected parameters, API key state and the last connected proxy |
+| **Platforms** | macOS and Windows; automated Windows artifact build in GitHub Actions |
+| **Quality** | offline unit tests and compile checks on Python 3.11/3.12, dependency audit and local-secret guards |
+
+> [!CAUTION]
+> The application can create billable Proxy-Seller orders and change the operating system proxy configuration. CI does **not** perform live purchases or mutate the host proxy; those actions happen only when the application is explicitly configured with a real API key and the corresponding GUI action is used.
+
 - select proxy type, country, period or tariff;
 - calculate and create an order through the API;
 - wait for proxy activation;
@@ -138,77 +152,3 @@ The artifact contains the built `.exe` and the contents of `dist/Proxy Seller La
 1. Paste your Proxy-Seller API key.
 2. Select a proxy type and protocol.
 3. Press `Обновить данные`.
-4. Select:
-   - country + period for standard proxy types, or
-   - a tariff for `resident` / `scraper`.
-5. Enter the quantity.
-6. For `mobile`, select service, operator and rotation.
-7. If necessary, open advanced parameters and configure:
-   - payment method,
-   - authorization IP,
-   - `generateAuth`,
-   - `customTargetName`,
-   - `orderId/baseOrderNumber` filter.
-8. Press:
-   - `Купить и подключить` to create a paid order and connect it, or
-   - `Подключить купленный` to connect without creating another order.
-9. For a resident package with remaining traffic, use `Ещё -> Выпустить resident конфиг` to issue a configuration without buying a new package.
-10. Use `Отключить прокси` to disable the system proxy.
-
-## Local data storage
-
-All application data is stored in:
-
-- `~/.proxy-desktop-launcher/`
-
-Key files:
-
-- `settings.json` — UI settings and API key;
-- `last_proxy.json` — last successfully connected proxy;
-- `generated_proxy_configs/` — saved order configurations;
-- `app_debug.log` — application debug log.
-
-## Tests
-
-Install development dependencies:
-
-```bash
-pip install -r requirements-dev.txt
-```
-
-Run unit tests:
-
-```bash
-PYTHONPATH=. pytest -q
-```
-
-Optional live API smoke tests:
-
-```bash
-PROXY_SELLER_API_KEY=your_key PYTHONPATH=. pytest -q tests/test_proxy_seller_live.py
-```
-
-Live tests check reference data, balance and calculation endpoints and must not create a purchase.
-
-### Automated quality gates
-
-- offline unit tests on Python 3.11 and 3.12;
-- runtime module compile verification;
-- dependency vulnerability audit;
-- guard against committed `.env` and local `settings.json` credentials;
-- separate Windows executable build workflow.
-
-Live Proxy-Seller API checks remain opt-in and are intentionally excluded from pull-request CI.
-
-## Limitations and important behavior
-
-- `Купить и подключить` creates a paid Proxy-Seller order and therefore has a confirmation dialog.
-- Windows system proxy settings do not persist username/password globally; individual applications may request authentication separately.
-- The API key is stored locally in plaintext inside `settings.json` for autofill convenience.
-
-## Documentation
-
-- [Architecture](docs/ARCHITECTURE.md)
-- [API endpoints](docs/API_ENDPOINTS.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-- [Customer guide for Windows](docs/INSTRUCTION.md)
